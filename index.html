@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html style="height: 100%;">
   <head>
-    <title>just a platformer</title>
-    <link rel="icon" type="image/png" href="pics/just-a-platformer.png" />
-    <link rel="stylesheet" href="shared/game.css" />
+    <title>[TAS] just a platformer</title>
+    <link rel="icon" type="image/png" href="https://thetastypi.github.io/pics/just-a-platformer.png" />
+    <link rel="stylesheet" href="https://thetastypi.github.io/just-a-platformer/shared/game.css" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
@@ -11,7 +11,7 @@
     <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
     <meta
       name="description"
-      content="'just a platformer', a difficult, minimalistic platformer created by TheTastyPi with a level editor."
+      content="TAS tool for 'just a platformer', a difficult, minimalistic platformer created by TheTastyPi with a level editor."
     />
     <meta name="author" content="TheTastyPi" />
   </head>
@@ -19,7 +19,7 @@
     <canvas id="bgLayer" style="position: absolute;"></canvas>
     <canvas id="playerLayer" style="position: absolute;"></canvas>
     <canvas id="levelLayer" style="position: absolute;"></canvas>
-    <div id="timer" style="background: #ffffff88;">
+    <div id="timer" style="background:#FFFFFF88">
       00:00:00<br />
       00:00:00
     </div>
@@ -42,6 +42,7 @@
         "just a platformer"<br />
         Made by <a href="https://thetastypi.github.io/">TheTastyPi</a> and
         <a href="https://yhvr.me">Yhvr</a><br />
+		TAS Tool by <a href="https://github.com/MathIsFun0">MathIsFun_</a><br />
         <br />
         Time Played: <span id="timePlayed">0 second</span><br />
         Time in Branch: <span id="branchTime">0 second</span><br />
@@ -55,22 +56,23 @@
         [R] to force-respawn<br />
         [shift] + [R] to go to hub<br />
         [delete] to wipe save<br />
-        [\] to export save data<br />
-        [shift] + [\] to import save data<br>
+		[\] to export save data<br />
+        [shift] + [\] to import save data<br />
+		[T] to update TAS inputs <br />
         <br />
         Difficulties<br />
-        <a href="easier/index.html">EZR</a> | <a href="easy/index.html">EZ</a> |
-        <a href="hard/index.html">HARD</a> <br />
+        <a href="https://thetastypi.github.io/just-a-platformer/easier/index.html">EZR</a> | <a href="https://thetastypi.github.io/just-a-platformer/easy/index.html">EZ</a> |
+        <a href="https://thetastypi.github.io/just-a-platformer/hard/index.html">HARD</a> <br />
         <br />
-        <a href="levelEditor/index.html">Level Editor</a> <br />
-        <a href="options.html">Options</a> <br />
+        <a href="https://thetastypi.github.io/just-a-platformer/levelEditor/index.html">Level Editor</a> <br />
+        <a href="https://thetastypi.github.io/just-a-platformer/options.html">Options</a> <br />
         <a href="https://discord.gg/zVpdcuaXYF">Discord Server</a>
       </div>
     </div>
     <button id="infoOpen" onclick="openInfo();">
       More
     </button>
-    <textarea
+	<textarea
       style="
         opacity: 0.01;
         height: 0;
@@ -83,10 +85,151 @@
 export text</textarea
     >
   </body>
-  <script src="levels.js"></script>
-  <script src="shared/optionsLoader.js"></script>
-  <script src="draw.js"></script>
+  <script src="https://thetastypi.github.io/just-a-platformer/levels.js"></script>
+  <script src="https://thetastypi.github.io/just-a-platformer/shared/optionsLoader.js"></script>
+  <script src="https://thetastypi.github.io/just-a-platformer/draw.js"></script>
   <script src="main.js"></script>
-  <script src="mobile.js"></script>
-  <script src="shared/mobileCore.js"></script>
+  <script src="https://thetastypi.github.io/just-a-platformer/mobile.js"></script>
+  <script src="https://thetastypi.github.io/just-a-platformer/shared/mobileCore.js"></script>
+  
+  <style>.time-box {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  padding: 10px;
+  background-color: #f1f1f1;
+  border: solid thin black;
+  border-top-right-radius: 5px;
+  font-family: monospace;
+  font-size: 16px;
+  text-align: center;
+  width: 200px; /* Set a fixed width for the box */
+}
+
+.time-box h1 {
+  font-size: 24px;
+  margin: 0;	
+  text-align: left; /* Align the text to the left */
+}
+
+.time-box p {
+  font-size: 16px;
+  margin: 0;
+  font-weight: normal; /* Make the text not bold */
+  text-align: left; /* Align the text to the left */
+}
+
+.modal {
+  display: block;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+}
+
+#close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+#close:hover,
+#close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+#tas-input {
+  width: 100%;
+  height: 200px;
+  resize: none;
+}
+
+#edit-tas-modal {
+  font-family: monospace;
+}
+
+/* rounded border for the modal */
+.modal-content {
+  border-radius: 10px;
+}
+
+/* animation for when the modal appears */
+#edit-tas-modal.fade-in {
+  animation-name: fadeIn;
+  animation-duration: 0.5s;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* animation for when the modal is removed */
+#edit-tas-modal.fade-out {
+  animation-name: fadeOut;
+  animation-duration: 0.5s;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+#save-tas-btn {
+  font-size: 16px;
+  font-weight: bold;
+  color: black;
+  background-color: #ccc;
+  border: 1px solid black;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-family: monospace;
+  position: relative;
+  bottom: -10px;
+}
+
+#save-tas-btn:hover {
+  background-color: #aaa;
+}
+</style>
+
+<div class="time-box">
+  <h1 id="top-time">0:00.000</h1>
+  <p id="bottom-time">0:00.000 (0)</p>
+</div>
+
+<div id="edit-tas-modal" class="modal">
+  <div class="modal-content">
+    <span id="close">&times;</span>
+    <h2>Edit TAS:</h2>
+    <textarea id="tas-input"></textarea>
+	<button id="save-tas-btn">Save</button>
+  </div>
+</div>
+
 </html>
