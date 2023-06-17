@@ -1,10 +1,13 @@
 var currentVersion = 0.3;
 var gameSpeed = 1;
+var TAS_gameSlowdown = 1;
+var frameTime = 1000/60;
+var savestate ="";
 var player = {
   spawnPoint: newSave(),
   isDead: false,
-  spawnDelay: Math.floor((options.spawnDelay * 100) / 3),
-  spawnTimer: Math.floor((options.spawnDelay * 100) / 3),
+  spawnDelay: 0,//Math.floor((options.spawnDelay * 100) / 3),
+  spawnTimer: 0,//Math.floor((options.spawnDelay * 100) / 3),
   levelCoord: [0, 0],
   get currentLevel() {
     return worldMap[player.levelCoord[0]][player.levelCoord[1]];
@@ -57,6 +60,7 @@ function initAudio(url) {
 var fadein = null;
 var fadeout = null;
 var toFadein = null;
+var fromRespawn = false;
 function playAudio(target) {
   if (currentlyPlaying === target) return;
   if (currentlyPlaying) {
@@ -136,6 +140,7 @@ document.addEventListener("keydown", function (input) {
       wipeSave();
       break;
     case "KeyR":
+	  if (modal.style.display == "none"){
       if (input.shiftKey) {
         if (player.reachedHub) {
           if (confirm("Are you sure you want to go to the hub?")) {
@@ -157,22 +162,45 @@ document.addEventListener("keydown", function (input) {
               player.finalDeaths,
               0
             ];
+			fromRespawn = true;
             respawn();
           }
         } else alert("You have not reached the hub yet.");
       } else {
         player.isDead = true;
         player.spawnTimer = 0;
+		fromRespawn = true;
       }
+	  }
       break;
     case "KeyC":
-      openInfo();
+	  if (modal.style.display == "none") openInfo();
       break;
     case "Backslash":
       if (input.shiftKey) {
         importSave();
       } else exportSave();
       break;
+	 case "KeyT":
+		if (modal.style.display == "none" && id("mainInfo").style.opacity == 0) {
+		  gameRunning = false;
+		// set the current value of TAS in the input element
+		  input.value = TAS_str;
+
+		  // add the fade-in class to the modal
+		  modal.classList.add("fade-in");
+
+		  // display the modal
+		  modal.style.display = "block";
+		  setTimeout(function(){
+		  tasInput.focus()
+		  },1); //goofy trick to not type the t in the textarea
+		}
+	case "Enter":
+	  if (input.shiftKey && modal.style.display != "none") {
+		  tasInput.value = tasInput.value.trim(); //remove trailing enter
+		  saveTasBtn.click();
+	  }
     default:
       break;
   }
@@ -208,24 +236,33 @@ document.addEventListener("keyup", function (input) {
   }
 });
 
-var lastFrame = 0;
+//var lastFrame = 0;
 var simReruns = 20;
 var sinceLastSave = 0;
 var noFriction = false;
 var branchInProgress = true;
-function nextFrame(timeStamp) {
+var TAStrigger = false;
+var lastTAStrigger = false;
+var triggerBlocksToReplace = [];
+function nextFrame(/*timeStamp*/) {
   // setup stuff
-  let dt = timeStamp - lastFrame;
-  if (dt === 0) {
+  //let dt = timeStamp - lastFrame;
+  parseInput(currentFrame);
+  if (gameRunning == false) return;
+  currentFrame++;
+  let dt = frameTime; //new
+  /*if (dt === 0) {
     window.requestAnimationFrame(nextFrame);
     return;
-  }
+  }*/
   player.timePlayed += dt;
   if (branchInProgress) player.branchTime += dt;
   player.spawnPoint[10] = player.timePlayed;
   player.spawnPoint[15] = player.branchTime;
   id("timePlayed").innerHTML = formatTime(player.timePlayed);
+  id("top-time").innerHTML = formatTime(player.timePlayed, false);
   id("branchTime").innerHTML = formatTime(player.branchTime);
+  id("bottom-time").innerHTML = formatTime(player.branchTime, false)+" ("+currentFrame+")";
   id("timer").innerHTML =
     formatTime(player.timePlayed, false) +
     "<br>" +
@@ -251,7 +288,7 @@ function nextFrame(timeStamp) {
     }
   }
   dt *= gameSpeed;
-  lastFrame = timeStamp;
+  //lastFrame = timeStamp;
   if (dt < 100 * gameSpeed) {
     dt = dt / simReruns;
     let xprev = player.x;
@@ -261,6 +298,8 @@ function nextFrame(timeStamp) {
     let triggersPrev = [...player.triggers];
     let shouldDrawLevel = false;
     for (let i = 0; i < simReruns; i++) {
+		lastTAStrigger = TAStrigger;
+		TAStrigger = false;
       // some weird fricker to do stuff
       if (!player.isDead) {
         player.x += (player.xv * dt) / 500;
@@ -551,40 +590,52 @@ function nextFrame(timeStamp) {
                 // grav-dir
                 case 6:
                   player.xg = false;
-                  if (player.g > 0) player.g = -player.g;
+                  if (player.g > 0) {
+					  console.log("GravityUp["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+					  player.g = -player.g;
+				  }
                   break;
                 case 7:
                   player.xg = false;
-                  if (player.g < 0) player.g = -player.g;
+                  if (player.g < 0) {
+					  player.g = -player.g;
+				  console.log("GravityDown["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+				  }
                   break;
                 // grav magnitude
                 case 8:
+				  if (Math.abs(player.g) != 170) console.log("GravityLow["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
                   player.g = Math.sign(player.g) * 170;
                   break;
                 case 9:
+				  if (Math.abs(player.g) != 325) console.log("GravityMedium["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
                   player.g = Math.sign(player.g) * 325;
                   break;
                 case 10:
+				  if (Math.abs(player.g) != 650) console.log("GravityHigh["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
                   player.g = Math.sign(player.g) * 650;
                   break;
                 // multi-jump
                 case 12:
+				  if (player.maxJumps != 0) console.log("ZeroJump["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
                   player.maxJumps = 0;
                   player.currentJumps = player.maxJumps;
                   break;
                 case 13:
+				  if (player.maxJumps != 1) console.log("OneJump["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
                   player.maxJumps = 1;
                   player.currentJumps = player.maxJumps;
                   break;
                 case 14:
+				  if (player.maxJumps != 2 || player.currentJumps < 1) console.log("TwoJump["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
                   player.maxJumps = 2;
                   player.currentJumps = player.maxJumps;
                   break;
                 case 15:
-                  player.maxJumps = 3;
-                  player.currentJumps = player.maxJumps;
+				  if (player.maxJumps != 3 || player.currentJumps < 2) console.log("ThreeJump["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
                   break;
                 case 16:
+				  if (player.maxJumps != Infinity) console.log("InfiniteJump["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
                   player.maxJumps = Infinity;
                   player.currentJumps = player.maxJumps;
                   break;
@@ -600,6 +651,7 @@ function nextFrame(timeStamp) {
                     );
                     id("deathCountEnd").innerHTML = player.finalDeaths;
                     if (id("mainInfo").style.bottom != "0%") openInfo();
+					console.log("Goal["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
                   }
                 case 3:
                   if (!isSpawn(x, y)) {
@@ -627,16 +679,23 @@ function nextFrame(timeStamp) {
                     ];
                     shouldDrawLevel = true;
                     save();
+					console.log("Checkpoint["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
                   }
                   break;
                 // speed change
                 case 21:
+				  if (player.moveSpeed != 300)
+				  console.log("SlowSpeed["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
                   player.moveSpeed = 300;
                   break;
                 case 22:
+				  if (player.moveSpeed != 600)
+				  console.log("NormalSpeed["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
                   player.moveSpeed = 600;
                   break;
                 case 23:
+				  if (player.moveSpeed != 1200)
+				  console.log("FastSpeed["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
                   player.moveSpeed = 1200;
                   break;
                 // death block
@@ -671,6 +730,7 @@ function nextFrame(timeStamp) {
                           levels[player.currentLevel].length - 1
                         ].findIndex((x) => x[0] == -1 && x[1] == warpId) +
                       ((player.y + blockSize) % blockSize);
+					console.log("Room["+x+","+y+"]<"+player.levelCoord[0]+","+player.levelCoord[1]+"> @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
                   } else if (bx2 >= level.length) {
                     // right
                     if (props[2] != undefined) {
@@ -684,6 +744,7 @@ function nextFrame(timeStamp) {
                           (x) => x[0] == -1 && x[1] == warpId
                         ) +
                       ((player.y + blockSize) % blockSize);
+					console.log("Room["+x+","+y+"]<"+player.levelCoord[0]+","+player.levelCoord[1]+"> @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
                   } else if (by1 < 0) {
                     // up
                     if (props[2] != undefined) {
@@ -701,6 +762,7 @@ function nextFrame(timeStamp) {
                             x[x.length - 1][1] == warpId
                         ) +
                       ((player.x + blockSize) % blockSize);
+					console.log("Room["+x+","+y+"]<"+player.levelCoord[0]+","+player.levelCoord[1]+"> @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
                   } else if (by2 >= level[0].length) {
                     // down
                     if (props[2] != undefined) {
@@ -714,6 +776,7 @@ function nextFrame(timeStamp) {
                           (x) => x[0][0] == -1 && x[0][1] == warpId
                         ) +
                       ((player.x + blockSize) % blockSize);
+					console.log("Room["+x+","+y+"]<"+player.levelCoord[0]+","+player.levelCoord[1]+"> @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
                   }
                   updateAudio();
                   break;
@@ -733,7 +796,12 @@ function nextFrame(timeStamp) {
         player.spawnTimer -= dt;
         if (player.spawnTimer <= 0) respawn();
       }
-      // triggers
+	  if (player.triggers.includes("TAS")) {
+		  player.triggers.splice(player.triggers.indexOf("TAS"), 1);
+		  TAStrigger = true;
+		  if (lastTAStrigger == false)
+			console.log("TASTrigger @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+	  }
       if (!player.triggers.includes(-1)) {
         levels[9][5][5] = 0;
         levels[9][5][4] = 0;
@@ -743,6 +811,7 @@ function nextFrame(timeStamp) {
         levels[9][10][1] = 0;
         levels[9][13][1] = 0;
       } else {
+		if (levels[9][5][5] == 0) console.log("BranchTrigger[1] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[9][5][5] = 7;
         levels[9][5][4] = 6;
         levels[9][5][2] = 7;
@@ -757,6 +826,7 @@ function nextFrame(timeStamp) {
         levels[9][7][2] = 0;
         levels[9][7][1] = 0;
       } else {
+		if (levels[9][7][5] == 0) console.log("BranchTrigger[2] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[9][7][5] = 13;
         levels[9][7][4] = 16;
         levels[9][7][2] = 16;
@@ -767,6 +837,7 @@ function nextFrame(timeStamp) {
         levels[9][10][3] = 1;
         levels[9][10][5] = 1;
       } else {
+		if (levels[9][10][5] == 1) console.log("BranchTrigger[3] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[9][10][2] = 11;
         levels[9][10][3] = 11;
         levels[9][10][5] = 11;
@@ -776,17 +847,21 @@ function nextFrame(timeStamp) {
         levels[9][11][5] = 0;
         levels[9][13][5] = 0;
       } else {
+		if (levels[9][11][5] == 0) console.log("BranchTrigger[4] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[9][11][1] = 22;
         levels[9][11][5] = 23;
         levels[9][13][5] = 22;
       }
       if (player.triggers.includes(0)) {
+		if (levels[22][6][4] == -4) console.log("Trigger[0] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[22][6][4] = 0;
       } else levels[22][6][4] = -4;
       if (player.triggers.includes(1)) {
+		if (levels[22][6][5] == -4) console.log("Trigger[1] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[22][6][5] = 0;
       } else levels[22][6][5] = -4;
       if (player.triggers.includes(2)) {
+		if (levels[26][27][1] == -4) console.log("Trigger[2] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[26][27][1] = 0;
         levels[26][27][2] = 0;
       } else {
@@ -794,6 +869,7 @@ function nextFrame(timeStamp) {
         levels[26][27][2] = -4;
       }
       if (player.triggers.includes(3)) {
+		if (levels[26][28][1] == -4) console.log("Trigger[3] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[26][28][1] = 0;
         levels[26][28][2] = 0;
       } else {
@@ -801,6 +877,7 @@ function nextFrame(timeStamp) {
         levels[26][28][2] = -4;
       }
       if (player.triggers.includes(4)) {
+		if (levels[26][29][1] == -4) console.log("Trigger[4] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[26][29][1] = 0;
         levels[26][29][2] = 0;
       } else {
@@ -808,6 +885,7 @@ function nextFrame(timeStamp) {
         levels[26][29][2] = -4;
       }
       if (player.triggers.includes(5)) {
+		if (levels[26][31][11] == -5) console.log("Trigger[5] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[26][31][11] = 0;
         levels[26][31][12] = 0;
       } else {
@@ -815,6 +893,7 @@ function nextFrame(timeStamp) {
         levels[26][31][12] = -4;
       }
       if (player.triggers.includes(6)) {
+		if (levels[26][32][11] == -4) console.log("Trigger[6] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[26][32][11] = 0;
         levels[26][32][12] = 0;
       } else {
@@ -822,6 +901,7 @@ function nextFrame(timeStamp) {
         levels[26][32][12] = -4;
       }
       if (player.triggers.includes(7)) {
+		if (levels[26][33][11] == -4) console.log("Trigger[7] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[26][33][11] = 0;
         levels[26][33][12] = 0;
       } else {
@@ -829,27 +909,35 @@ function nextFrame(timeStamp) {
         levels[26][33][12] = -4;
       }
       if (player.triggers.includes(8)) {
+		if (levels[26][38][1] == -4) console.log("Trigger[8] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[26][38][1] = 0;
       } else levels[26][38][1] = -4;
       if (player.triggers.includes(9)) {
+		if (levels[26][39][1] == -4) console.log("Trigger[9] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[26][39][1] = 0;
       } else levels[26][39][1] = -4;
       if (player.triggers.includes(10)) {
+		if (levels[32][15][3] == -4) console.log("Trigger[10] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[32][15][3] = 0;
       } else levels[32][15][3] = -4;
       if (player.triggers.includes(11)) {
+		if (levels[32][9][1] == -4) console.log("Trigger[11] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[32][9][1] = 0;
       } else levels[32][9][1] = -4;
       if (player.triggers.includes(12)) {
+		if (levels[32][7][3] == -4) console.log("Trigger[12] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[32][7][3] = 0;
       } else levels[32][7][3] = -4;
       if (player.triggers.includes(13)) {
+		if (levels[32][3][3] == -4) console.log("Trigger[13] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[32][3][3] = 0;
       } else levels[32][3][3] = -4;
       if (player.triggers.includes(14)) {
+		if (levels[32][1][4] == -4) console.log("Trigger[14] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[32][1][4] = 0;
       } else levels[32][1][4] = -4;
       if (player.triggers.includes(15)) {
+		if (levels[35][15][4] == -4) console.log("Trigger[15] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[35][15][4] = 0;
         levels[35][15][5] = 0;
       } else {
@@ -857,18 +945,23 @@ function nextFrame(timeStamp) {
         levels[35][15][5] = -4;
       }
       if (player.triggers.includes(16)) {
+		if (levels[42][12][9] == -4) console.log("Trigger[16] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[42][12][9] = 0;
       } else levels[42][12][9] = -4;
       if (player.triggers.includes(17)) {
+		if (levels[42][1][1] == -4) console.log("Trigger[17] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[42][1][1] = 0;
       } else levels[42][1][1] = -4;
       if (player.triggers.includes(18)) {
+		if (levels[43][10][6] == -4) console.log("Trigger[18] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[43][10][6] = 0;
       } else levels[43][10][6] = -4;
       if (player.triggers.includes(19)) {
+		if (levels[43][5][9] == -4) console.log("Trigger[19] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[43][5][9] = 0;
       } else levels[43][5][9] = -4;
       if (player.triggers.includes(20)) {
+		if (levels[43][7][10] == -4) console.log("Trigger[20] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[43][7][10] = 0;
         if (diff === "-HARD") levels[43][6][9] = -4;
       } else {
@@ -876,30 +969,39 @@ function nextFrame(timeStamp) {
         if (diff === "-HARD") levels[43][6][9] = 0;
       }
       if (player.triggers.includes(21)) {
+		if (levels[43][6][12] == -4) console.log("Trigger[21] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[43][6][12] = 0;
       } else levels[43][6][12] = -4;
       if (player.triggers.includes(22)) {
+		if (levels[52][1][2] == -4) console.log("Trigger[22] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[52][1][2] = 0;
       } else levels[52][1][2] = -4;
       if (player.triggers.includes(23)) {
+		if (levels[63][27][5] == -4) console.log("Trigger[23] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[63][27][5] = 0;
       } else levels[63][27][5] = -4;
       if (player.triggers.includes(24)) {
+		if (levels[63][27][2] == -4) console.log("Trigger[24] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[63][27][2] = 0;
       } else levels[63][27][2] = -4;
       if (player.triggers.includes(25)) {
+		if (levels[63][25][5] == -4) console.log("Trigger[25] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[63][25][5] = 0;
       } else levels[63][25][5] = -4;
       if (player.triggers.includes(26)) {
+		if (levels[63][25][8] == -4) console.log("Trigger[26] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[63][25][8] = 0;
       } else levels[63][25][8] = -4;
       if (player.triggers.includes(27)) {
+		if (levels[73][13][4] == -4) console.log("Trigger[27] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[73][13][4] = 0;
       } else levels[73][13][4] = -4;
       if (player.triggers.includes(28)) {
+		if (levels[73][13][3] == -4) console.log("Trigger[28] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[73][13][3] = 0;
       } else levels[73][13][3] = -4;
       if (player.triggers.includes(29)) {
+		if (levels[74][4][8] == -4) console.log("Trigger[29] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[74][4][8] = 0;
         levels[74][4][9] = 0;
       } else {
@@ -907,33 +1009,43 @@ function nextFrame(timeStamp) {
         levels[74][4][9] = -4;
       }
       if (player.triggers.includes(30)) {
+		if (levels[74][6][4] == -4) console.log("Trigger[30] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[74][6][4] = 0;
       } else levels[74][6][4] = -4;
       if (player.triggers.includes(31)) {
+		if (levels[74][5][20] == -4) console.log("Trigger[31] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[74][5][20] = 0;
       } else levels[74][5][20] = -4;
       if (player.triggers.includes(32)) {
+		if (levels[75][5][4] == -4) console.log("Trigger[32] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[75][5][4] = 0;
       } else levels[75][5][4] = -4;
       if (player.triggers.includes(33)) {
+		if (levels[75][5][2] == -4) console.log("Trigger[33] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[75][5][2] = 0;
       } else levels[75][5][2] = -4;
       if (player.triggers.includes(34)) {
+		if (levels[75][7][10] == -4) console.log("Trigger[34] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[75][7][10] = 0;
       } else levels[75][7][10] = -4;
       if (player.triggers.includes(35)) {
+		if (levels[85][16][11] == -4) console.log("Trigger[35] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[85][16][11] = 0;
       } else levels[85][16][11] = -4;
       if (player.triggers.includes(36)) {
+		if (levels[85][18][11] == -4) console.log("Trigger[36] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[85][18][11] = 0;
       } else levels[85][18][11] = -4;
       if (player.triggers.includes(37)) {
+		if (levels[85][19][3] == -4) console.log("Trigger[37] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[85][19][3] = 0;
       } else levels[85][19][3] = -4;
       if (player.triggers.includes(38)) {
+		if (levels[85][19][1] == -4) console.log("Trigger[38] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[85][19][1] = 0;
       } else levels[85][19][1] = -4;
       if (player.triggers.includes(39)) {
+		if (levels[87][16][11] == -4) console.log("Trigger[39] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[87][16][11] = 0;
         levels[87][16][12] = 0;
       } else {
@@ -941,6 +1053,7 @@ function nextFrame(timeStamp) {
         levels[87][16][12] = -4;
       }
       if (player.triggers.includes(40)) {
+		if (levels[87][18][11] == -4) console.log("Trigger[40] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[87][18][11] = 0;
         levels[87][18][12] = 0;
       } else {
@@ -948,6 +1061,7 @@ function nextFrame(timeStamp) {
         levels[87][18][12] = -4;
       }
       if (player.triggers.includes(41)) {
+		if (levels[87][20][11] == -4) console.log("Trigger[41] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[87][20][11] = 0;
         levels[87][20][12] = 0;
       } else {
@@ -955,6 +1069,7 @@ function nextFrame(timeStamp) {
         levels[87][20][12] = -4;
       }
       if (player.triggers.includes(42)) {
+		if (levels[87][22][11] == -4) console.log("Trigger[42] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
         levels[87][22][11] = 0;
         levels[87][22][12] = 0;
       } else {
@@ -1009,7 +1124,7 @@ function nextFrame(timeStamp) {
         player.levelCoord[0] !== lvlxprev || player.levelCoord[1] !== lvlyprev
       );
   }
-  window.requestAnimationFrame(nextFrame);
+  //window.requestAnimationFrame(nextFrame);
 }
 
 function openInfo() {
@@ -1076,6 +1191,12 @@ function wipeSave() {
     !options.wipeConfirm ||
     confirm("Are you sure you want to delete your save?")
   ) {
+	currentFrame = 0;
+	TAS_gameSlowdown = 1;
+	msOfFrame = frameTime*TAS_gameSlowdown/2;
+	parseInput(-1);
+	console.clear();
+	TAS = JSON.parse(JSON.stringify(TAS_base));
     player.spawnPoint = newSave();
     save();
     load();
@@ -1086,8 +1207,26 @@ function wipeSave() {
     adjustScreen(true);
   }
 }
+
+function forceWipeSave(s) {
+	currentFrame = 0;
+	TAS_gameSlowdown = 1;
+	msOfFrame = frameTime*TAS_gameSlowdown/2;
+	parseInput(-1);
+	console.clear();
+	TAS = JSON.parse(JSON.stringify(TAS_base));
+    player.spawnPoint = newSave();
+	if (s != "") player.spawnPoint = s;
+    save();
+    load();
+    respawn(false);
+    branchInProgress = true;
+    drawLevel();
+    drawPlayer();
+    adjustScreen(true);
+}
 function exportSave() {
-  let saveData = btoa(localStorage.getItem("just-a-save" + diff));
+  let saveData = localStorage.getItem("just-a-save" + diff);
   id("exportArea").value = saveData;
   id("exportArea").style.display = "inline";
   id("exportArea").focus();
@@ -1099,7 +1238,7 @@ function exportSave() {
 function importSave() {
   let saveData = prompt("Please input save data");
   if (saveData) {
-    saveData = atob(saveData);
+	savestate = JSON.parse(saveData);
     localStorage.setItem("just-a-save" + diff, saveData);
     load();
     respawn(false);
@@ -1122,6 +1261,8 @@ function respawn(death = true) {
     player.spawnPoint[11] = player.deaths;
     id("deathCount").innerHTML = player.deaths;
     save();
+	if (!fromRespawn) console.log("Death @ " + currentFrame + " (" + (player.timePlayed/1000).toFixed(3) + ")");
+	else fromRespawn = false;
   }
   player.spawnTimer = player.spawnDelay;
   player.isDead = false;
@@ -1245,12 +1386,12 @@ function formatTime(ms, word = true) {
     if (m < 60) time = time.replace(",", "");
     return time;
   } else {
-    time = (ds < 10 ? "0" : "") + ds.toFixed(2);
-    time = (dm < 10 ? "0" : "") + dm + ":" + time;
-    if (dh >= 1) time = (dh < 10 ? "0" : "") + dh + ":" + time;
-    if (dd >= 1) time = dd + ":" + time;
-    if (dmo >= 1) time = dmo + ":" + time;
-    if (dy >= 1) time = dy + ":" + time;
+    time = (ds < 9.999 ? "0" : "") + ds.toFixed(3);
+    time = dm + ":" + time;
+    if (dh >= 1) time = dh + ":" + time;
+    if (dd >= 1) time = dd + "d " + time;
+    if (dmo >= 1) time = dmo + "m " + time;
+    if (dy >= 1) time = dy + "y " + time;
     return time;
   }
 }
@@ -1259,8 +1400,220 @@ function pluralCheck(n) {
 }
 var id = (x) => document.getElementById(x);
 
+function parseInput(f) {
+	if (TAS.length > 0) {
+	if (TAS[0][0] == f) {
+		if (TAS[0].length == 4) {
+			//triggers
+			if (TAS[0][1] == "trigger") {
+				triggerBlocksToReplace.push([player.currentLevel, parseInt(TAS[0][2]), parseInt(TAS[0][3]), levels[player.currentLevel][parseInt(TAS[0][2])][parseInt(TAS[0][3])]]);
+				levels[player.currentLevel][parseInt(TAS[0][2])][parseInt(TAS[0][3])] = [-3, "TAS"];
+				drawLevel();
+			}
+		}
+		if (TAS[0].length == 3) {
+			// directional inputs
+			if (TAS[0][2] == "up") {
+				if (TAS[0][1] == "rel") {
+					control.up = false;	
+					if (!control.down && !control.space) player.canJump = true;
+				} else if (TAS[0][1] == "press") control.up = true;
+			} else if (TAS[0][2] == "right") {
+				if (TAS[0][1] == "rel") control.right = false;
+				else if (TAS[0][1] == "press") control.right = true;
+				else if (TAS[0][1] == "move") {
+					control.right = true;
+					control.left = false;
+				}
+			} else if (TAS[0][2] == "left") {
+				if (TAS[0][1] == "rel") control.left = false;
+				else if (TAS[0][1] == "press") control.left = true;
+				else if (TAS[0][1] == "move") {
+					control.left = true;
+					control.right = false;
+				}
+			}
+		} else {
+			if (TAS[0][1] == "jump") {
+				// Works like releasing and then pressing up.
+				control.up = true;
+				player.canJump = true;
+			} else if (TAS[0][1] == "respawn") {
+				player.isDead = true;
+				player.spawnTimer = 0;
+				fromRespawn = true;
+			} else if (TAS[0][1] == "reset") {
+				f = 0;
+				currentFrame = 0;
+				control.up = false;
+				control.left = false;
+				control.right = false;
+				player.canJump = false;
+			} else if (TAS[0][1] == "hub") {
+				if (player.reachedHub) {
+					player.spawnPoint = [
+					  7,
+					  5,
+					  5,
+					  4,
+					  325,
+					  1,
+					  600,
+					  [...player.triggers],
+					  currentVersion,
+					  true,
+					  player.timePlayed,
+					  player.deaths,
+					  player.gameComplete,
+					  player.finalTimePlayed,
+					  player.finalDeaths,
+					  0
+					];
+					fromRespawn = true;
+					respawn();
+				}
+			} else if (TAS[0][1] == "savestate") { //console.log() the checkpoint info
+				console.log(player.spawnPoint);
+			} else if (TAS[0][1] == "stop") {
+				gameRunning = false;
+			}
+		}
+		TAS.shift();
+		parseInput(f);
+	}
+	for (const i of findIndices(TAS, f+1)) {
+		if (TAS[i].length == 3 && TAS[i][1] == "frameTime" && gameRunning == true) {
+			frameTime = parseFloat(TAS[i][2]);
+			TAS.shift();
+			parseInput(f);
+		}
+		if (TAS[i].length == 3 && TAS[i][1] == "slowdown" && gameRunning == true) {
+			TAS_gameSlowdown = parseFloat(TAS[i][2]);
+			TAS.shift();
+			parseInput(f);
+		}
+	}
+}}
+
+function findIndices(arr, x) {
+  const indices = [];
+  indloop:
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i][0] === x) {
+      indices.push(i);
+    }
+	if (arr[i][1] == "reset") {
+	  break indloop;
+	}
+  }
+  
+  return indices;
+} //Small little ChatGPT wrapper function
+
+var start;
+var msOfFrame = frameTime*TAS_gameSlowdown/2; //Helps keep it balanced at the start
+
+function frameWrapper(timestamp) {
+	if (start == undefined) start = timestamp;
+	const elapsed = timestamp - start;
+	start = timestamp;
+	if (gameRunning) {
+		msOfFrame += elapsed;
+		while (msOfFrame >= frameTime*TAS_gameSlowdown) {
+			msOfFrame -= frameTime*TAS_gameSlowdown;
+			nextFrame();
+		}
+	}
+	window.requestAnimationFrame(frameWrapper)
+}
+window.requestAnimationFrame(frameWrapper);
+
+var TAS = "";//window.prompt("Enter the raw text of the TAS here.").replace(/(\r\n|\n|\r)/gm, "").split("; ").filter(a => !a.includes("#"));
+var TAS_base = "";
+var TAS_str = "";
+/*TAS.pop();
+for (var i = 0; i < TAS.length; i++) {
+	TAS[i] = TAS[i].split(" ");
+	TAS[i][0] = parseInt(TAS[i][0]);
+}
+var TAS_base = JSON.parse(JSON.stringify(TAS));*/
+/*savestate = window.prompt("Enter the savestate (leave blank if fresh)");
+if (savestate != "") savestate = JSON.parse(savestate);*/
+
+var currentFrame = 0;
 load();
 respawn(false);
 adjustScreen(true);
-window.requestAnimationFrame(nextFrame);
+
+//window.requestAnimationFrame(nextFrame);
+parseInput(-1);	
 setTimeout(drawLevel, 100);
+var modal;
+var closeBtn;
+var tasInput;
+var saveTasBtn;
+var gameRunning = false;
+var firstTime = true;
+window.onload = function(){
+modal = document.getElementById('edit-tas-modal');
+
+// get the <span> element that closes the modal
+closeBtn = document.getElementById('close');
+
+// get the <textarea> element for the TAS input
+tasInput = document.getElementById('tas-input');
+
+// get the <button> element for the save button
+saveTasBtn = document.getElementById('save-tas-btn');
+
+// update the tas variable and hide the modal when the save button is clicked
+saveTasBtn.addEventListener('click', function() {
+	firstTime = false;
+	 modal.classList.remove("fade-in");
+	modal.classList.add("fade-out");
+	setTimeout(function() {
+    modal.style.display = "none";
+    modal.classList.remove("fade-out");
+	}, 450);
+	gameRunning = false;
+	setTimeout(function() {
+	TAS_str = tasInput.value;
+	TAS = TAS_str.split("\n").filter(a => !a.includes("#"));
+	for (var i = 0; i < TAS.length; i++) {
+		TAS[i] = TAS[i].split(" ");
+		TAS[i][0] = parseInt(TAS[i][0]);
+	}
+	TAS_base = JSON.parse(JSON.stringify(TAS));
+	currentFrame = 0;
+	TAS_gameSlowdown = 1;
+	for (var i = 0; i < triggerBlocksToReplace.length; i++)
+		levels[triggerBlocksToReplace[i][0]][triggerBlocksToReplace[i][1]][triggerBlocksToReplace[i][2]] = triggerBlocksToReplace[i][3];
+	triggerBlocksToReplace = [];
+	msOfFrame = frameTime*TAS_gameSlowdown/2;
+	parseInput(-1);
+	console.clear();
+	gameRunning = true;
+	forceWipeSave(savestate);
+	}, 500);
+});
+
+// hide the modal when the close button or outside the modal is clicked
+closeBtn.addEventListener('click', function() {
+   modal.classList.remove("fade-in");
+	modal.classList.add("fade-out");
+	setTimeout(function() {
+    modal.style.display = "none";
+    modal.classList.remove("fade-out");
+	}, 450);
+	gameRunning = false;
+	if (firstTime) {forceWipeSave(savestate); firstTime = false;};
+	setTimeout(function() {
+	gameRunning = true;
+	}, 500);
+});
+
+window.addEventListener('click', function(event) {
+  if (event.target == modal) {
+    modal.style.display = 'none';
+  }
+});}
