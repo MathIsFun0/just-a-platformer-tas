@@ -44,12 +44,12 @@ if (options.darkMode) {
       color: #ffbbff;
     }
   
-    #infoOpen, #mainInfo, .mobileBtn, #moreBtn, .mobileMoreBtn, #infoParent, #blockSelect, .time-box, .modal-content {
+    #infoOpen, #mainInfo, .mobileBtn, #moreBtn, .mobileMoreBtn, #infoParent, #blockSelect, .time-box, .modal-content, .tas-settings, .tas-menu {
       background-color: #00000088 !important;
     }
 
     button, input, select, textarea {
-      background-color: #333336;
+      background-color: #333336 !important;
     }
 
     .key {
