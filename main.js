@@ -1664,31 +1664,6 @@ tasBar.addEventListener('click', () => {
   menuOpen = !menuOpen;
 });
 
-// Resize the trigger box height when the window is resized
-window.addEventListener('resize', () => {
-  if (menuOpen) {
-    triggerBox.style.minHeight = (tasMenu.offsetHeight - 20) + 'px';
-    triggerBox.style.maxHeight = (tasMenu.offsetHeight - 20) + 'px';
-  }
-});
-
-// Resize the trigger box height when the window is resized
-window.addEventListener('resize', () => {
-  if (menuOpen) {
-    triggerBox.style.minHeight = (tasMenu.offsetHeight - 20) + 'px';
-    triggerBox.style.maxHeight = (tasMenu.offsetHeight - 20) + 'px';
-  }
-});
-
-
-// Resize the trigger box height when the window is resized
-window.addEventListener('resize', () => {
-  if (menuOpen) {
-    triggerBox.style.minHeight = (tasMenu.offsetHeight - 20) + 'px';
-    triggerBox.style.maxHeight = (tasMenu.offsetHeight - 20) + 'px';
-  }
-});
-
 // Existing JavaScript code
 
 const gameSpeedSlider = document.getElementById('game-speed-slider');
