@@ -60,13 +60,6 @@
         [shift] + [\] to import save data<br />
 		[T] to update TAS inputs <br />
         <br />
-        Difficulties<br />
-        <a href="https://thetastypi.github.io/just-a-platformer/easier/index.html">EZR</a> | <a href="https://thetastypi.github.io/just-a-platformer/easy/index.html">EZ</a> |
-        <a href="https://thetastypi.github.io/just-a-platformer/hard/index.html">HARD</a> <br />
-        <br />
-        <a href="https://thetastypi.github.io/just-a-platformer/levelEditor/index.html">Level Editor</a> <br />
-        <a href="https://thetastypi.github.io/just-a-platformer/options.html">Options</a> <br />
-        <a href="https://discord.gg/zVpdcuaXYF">Discord Server</a>
       </div>
     </div>
     <button id="infoOpen" onclick="openInfo();">
@@ -84,25 +77,38 @@
     >
 export text</textarea
     >
-	  
-
-<div class="time-box">
-  <h1 id="top-time">0:00.000</h1>
-  <p id="bottom-time">0:00.000 (0)</p>
-</div>
-
-<div id="edit-tas-modal" class="modal">
-  <div class="modal-content">
-    <span id="close">&times;</span>
-    <h2>Edit TAS:</h2>
-    <textarea id="tas-input"></textarea>
-	<button id="save-tas-btn">Save</button>
+	
+<div class="tas-settings">
+  <div class="tas-bar">
+    <b>TAS Information</b>
+  </div>
+  <div class="tas-menu">
+    <div class="tas-element">
+      <span><b>Position: </b></span>
+      <span id="player-position">[0.000, 0.000]</span>
+    </div>
+    <div class="tas-element">
+      <span><b>Velocity: </b></span>
+      <span id="player-velocity">[0.000, 0.000]</span>
+    </div>
+    <div class="tas-element">
+      <div class="slider-container">
+      <div class="speed-title">Game Speed&nbsp;</div>
+        <input type="range" id="game-speed-slider" min="-1" max="1" step="0.01" value="0">
+        <input type="number" id="game-speed-textbox" min="0.1" max="10" step="0.01" value="1.00">
+      </div>
+    </div>
+    <div class="tas-element">
+      <div class="trigger-title">Triggers</div>
+      <textarea id="trigger-box" readonly></textarea>
+    </div>
   </div>
 </div>
-	  
+
+
   </body>
   <script src="https://thetastypi.github.io/just-a-platformer/levels.js"></script>
-  <script src="shared/optionsLoader.js"></script>
+  <script src="https://thetastypi.github.io/just-a-platformer/shared/optionsLoader.js"></script>
   <script src="https://thetastypi.github.io/just-a-platformer/draw.js"></script>
   <script src="main.js"></script>
   <script src="https://thetastypi.github.io/just-a-platformer/mobile.js"></script>
@@ -232,6 +238,83 @@ export text</textarea
 #save-tas-btn:hover {
   background-color: #aaa;
 }
+.tas-settings {
+  position: fixed;
+  bottom: 54px;
+  right: 0;
+  width: 400px;
+  background-color: #f1f1f1;
+  border: 1px solid #ccc;
+  border-top-left-radius: 10px;
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+  transform: translateY(100%);
+  margin-bottom: 0;
+  font-family: monospace;
+  font-size: 16px;
+}
+
+.tas-settings.open {
+  transform: translateY(calc(0% + 54px));
+}
+.tas-bar {
+  padding: 10px;
+  cursor: pointer;
+  font-size: 24px;
+}
+
+.tas-menu {
+  padding: 10px;
+  background-color: #fff;
+  border-top: 1px solid #ccc;
+}
+
+.trigger-title {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+#trigger-box {
+  width: 100%;
+  height: 150px;
+  resize: vertical;
+  overflow: auto;
+  padding: 5px;
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+}
+.speed-title {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.slider-container {
+  display: flex;
+  align-items: center;	
+}
+
+#game-speed-slider {
+  flex: 1;
+}
+
+#game-speed-textbox {
+  width: 60px;
+  margin-left: 10px;
+  font-family: monospace;
+}
 </style>
 
+<div class="time-box">
+  <h1 id="top-time">0:00.000</h1>
+  <p id="bottom-time">0:00.000 (0)</p>
+</div>
+
+<div id="edit-tas-modal" class="modal">
+  <div class="modal-content">
+    <span id="close">&times;</span>
+    <h2>Edit TAS:</h2>
+    <textarea id="tas-input"></textarea>
+	<button id="save-tas-btn">Save</button>
+  </div>
+</div>
 </html>
