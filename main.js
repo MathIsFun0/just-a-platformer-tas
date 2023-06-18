@@ -1502,6 +1502,11 @@ function parseInput(f) {
 			TAS.shift();
 			parseInput(f);
 		}
+		if (TAS[i].length == 3 && TAS[i][1] == "FPS" && gameRunning == true) {
+			frameTime = 1000/parseFloat(TAS[i][2]);
+			TAS.shift();
+			parseInput(f);
+		}
 		if (TAS[i].length == 3 && TAS[i][1] == "slowdown" && gameRunning == true) {
 			TAS_gameSlowdown = parseFloat(TAS[i][2]);
 			gameSpeedTextbox.value = (1/TAS_gameSlowdown).toFixed(2);
@@ -1685,6 +1690,8 @@ tasBar.addEventListener('click', () => {
 
   menuOpen = !menuOpen;
 });
+
+// Existing JavaScript code
 
 const gameSpeedSlider = document.getElementById('game-speed-slider');
 const gameSpeedTextbox = document.getElementById('game-speed-textbox');
