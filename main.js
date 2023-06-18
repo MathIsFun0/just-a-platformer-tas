@@ -267,6 +267,9 @@ function nextFrame(/*timeStamp*/) {
     formatTime(player.timePlayed, false) +
     "<br>" +
     formatTime(player.branchTime, false);
+  if (player.finalTimePlayed > 0) {
+	  id("top-time").innerHTML = formatTime(player.finalTimePlayed, false);
+  }
   sinceLastSave += dt;
   if (sinceLastSave >= 5000) {
     save();
@@ -591,7 +594,7 @@ function nextFrame(/*timeStamp*/) {
                 case 6:
                   player.xg = false;
                   if (player.g > 0) {
-					  triggerHit("GravityUp["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+					  triggerHit("GravityUp["+x+","+y+"] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
 					  player.g = -player.g;
 				  }
                   break;
@@ -599,43 +602,45 @@ function nextFrame(/*timeStamp*/) {
                   player.xg = false;
                   if (player.g < 0) {
 					  player.g = -player.g;
-				  triggerHit("GravityDown["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+				  triggerHit("GravityDown["+x+","+y+"] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
 				  }
                   break;
                 // grav magnitude
                 case 8:
-				  if (Math.abs(player.g) != 170) triggerHit("GravityLow["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+				  if (Math.abs(player.g) != 170) triggerHit("GravityLow["+x+","+y+"] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
                   player.g = Math.sign(player.g) * 170;
                   break;
                 case 9:
-				  if (Math.abs(player.g) != 325) triggerHit("GravityMedium["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+				  if (Math.abs(player.g) != 325) triggerHit("GravityMedium["+x+","+y+"] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
                   player.g = Math.sign(player.g) * 325;
                   break;
                 case 10:
-				  if (Math.abs(player.g) != 650) triggerHit("GravityHigh["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+				  if (Math.abs(player.g) != 650) triggerHit("GravityHigh["+x+","+y+"] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
                   player.g = Math.sign(player.g) * 650;
                   break;
                 // multi-jump
                 case 12:
-				  if (player.maxJumps != 0) triggerHit("ZeroJump["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+				  if (player.maxJumps != 0) triggerHit("ZeroJump["+x+","+y+"] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
                   player.maxJumps = 0;
                   player.currentJumps = player.maxJumps;
                   break;
                 case 13:
-				  if (player.maxJumps != 1) triggerHit("OneJump["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+				  if (player.maxJumps != 1) triggerHit("OneJump["+x+","+y+"] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
                   player.maxJumps = 1;
                   player.currentJumps = player.maxJumps;
                   break;
                 case 14:
-				  if (player.maxJumps != 2 || player.currentJumps < 1) triggerHit("TwoJump["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+				  if (player.maxJumps != 2 || player.currentJumps < 1) triggerHit("TwoJump["+x+","+y+"] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
                   player.maxJumps = 2;
                   player.currentJumps = player.maxJumps;
                   break;
                 case 15:
-				  if (player.maxJumps != 3 || player.currentJumps < 2) triggerHit("ThreeJump["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+				  if (player.maxJumps != 3 || player.currentJumps < 2) triggerHit("ThreeJump["+x+","+y+"] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
+                  player.maxJumps = 3;
+                  player.currentJumps = player.maxJumps;
                   break;
                 case 16:
-				  if (player.maxJumps != Infinity) triggerHit("InfiniteJump["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+				  if (player.maxJumps != Infinity) triggerHit("InfiniteJump["+x+","+y+"] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
                   player.maxJumps = Infinity;
                   player.currentJumps = player.maxJumps;
                   break;
@@ -651,7 +656,7 @@ function nextFrame(/*timeStamp*/) {
                     );
                     id("deathCountEnd").innerHTML = player.finalDeaths;
                     if (id("mainInfo").style.bottom != "0%") openInfo();
-					triggerHit("Goal["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+					triggerHit("Goal["+x+","+y+"] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
                   }
                 case 3:
                   if (!isSpawn(x, y)) {
@@ -679,23 +684,23 @@ function nextFrame(/*timeStamp*/) {
                     ];
                     shouldDrawLevel = true;
                     save();
-					triggerHit("Checkpoint["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+					triggerHit("Checkpoint["+x+","+y+"] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
                   }
                   break;
                 // speed change
                 case 21:
 				  if (player.moveSpeed != 300)
-				  triggerHit("SlowSpeed["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+				  triggerHit("SlowSpeed["+x+","+y+"] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
                   player.moveSpeed = 300;
                   break;
                 case 22:
 				  if (player.moveSpeed != 600)
-				  triggerHit("NormalSpeed["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+				  triggerHit("NormalSpeed["+x+","+y+"] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
                   player.moveSpeed = 600;
                   break;
                 case 23:
 				  if (player.moveSpeed != 1200)
-				  triggerHit("FastSpeed["+x+","+y+"] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+				  triggerHit("FastSpeed["+x+","+y+"] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
                   player.moveSpeed = 1200;
                   break;
                 // death block
@@ -730,7 +735,7 @@ function nextFrame(/*timeStamp*/) {
                           levels[player.currentLevel].length - 1
                         ].findIndex((x) => x[0] == -1 && x[1] == warpId) +
                       ((player.y + blockSize) % blockSize);
-					triggerHit("Room["+x+","+y+"]<"+player.levelCoord[0]+","+player.levelCoord[1]+"> @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+					triggerHit("Room["+x+","+y+"]<"+player.levelCoord[0]+","+player.levelCoord[1]+"> @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
                   } else if (bx2 >= level.length) {
                     // right
                     if (props[2] != undefined) {
@@ -744,7 +749,7 @@ function nextFrame(/*timeStamp*/) {
                           (x) => x[0] == -1 && x[1] == warpId
                         ) +
                       ((player.y + blockSize) % blockSize);
-					triggerHit("Room["+x+","+y+"]<"+player.levelCoord[0]+","+player.levelCoord[1]+"> @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+					triggerHit("Room["+x+","+y+"]<"+player.levelCoord[0]+","+player.levelCoord[1]+"> @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
                   } else if (by1 < 0) {
                     // up
                     if (props[2] != undefined) {
@@ -762,7 +767,7 @@ function nextFrame(/*timeStamp*/) {
                             x[x.length - 1][1] == warpId
                         ) +
                       ((player.x + blockSize) % blockSize);
-					triggerHit("Room["+x+","+y+"]<"+player.levelCoord[0]+","+player.levelCoord[1]+"> @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+					triggerHit("Room["+x+","+y+"]<"+player.levelCoord[0]+","+player.levelCoord[1]+"> @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
                   } else if (by2 >= level[0].length) {
                     // down
                     if (props[2] != undefined) {
@@ -776,7 +781,7 @@ function nextFrame(/*timeStamp*/) {
                           (x) => x[0][0] == -1 && x[0][1] == warpId
                         ) +
                       ((player.x + blockSize) % blockSize);
-					triggerHit("Room["+x+","+y+"]<"+player.levelCoord[0]+","+player.levelCoord[1]+"> @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+					triggerHit("Room["+x+","+y+"]<"+player.levelCoord[0]+","+player.levelCoord[1]+"> @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
                   }
                   updateAudio();
                   break;
@@ -794,13 +799,13 @@ function nextFrame(/*timeStamp*/) {
       if (!player.godMode && shouldDie && !player.isDead) player.isDead = true;
       if (player.isDead) {
         player.spawnTimer -= dt;
-        if (player.spawnTimer <= 0) respawn();
+        if (player.spawnTimer <= 0) respawn(true, dt, i);
       }
 	  if (player.triggers.includes("TAS")) {
 		  player.triggers.splice(player.triggers.indexOf("TAS"), 1);
 		  TAStrigger = true;
 		  if (lastTAStrigger == false)
-			triggerHit("TASTrigger @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+			triggerHit("TASTrigger @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
 	  }
       if (!player.triggers.includes(-1)) {
         levels[9][5][5] = 0;
@@ -811,7 +816,7 @@ function nextFrame(/*timeStamp*/) {
         levels[9][10][1] = 0;
         levels[9][13][1] = 0;
       } else {
-		if (levels[9][5][5] == 0) triggerHit("BranchTrigger[1] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[9][5][5] == 0) triggerHit("BranchTrigger[1] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[9][5][5] = 7;
         levels[9][5][4] = 6;
         levels[9][5][2] = 7;
@@ -826,7 +831,7 @@ function nextFrame(/*timeStamp*/) {
         levels[9][7][2] = 0;
         levels[9][7][1] = 0;
       } else {
-		if (levels[9][7][5] == 0) triggerHit("BranchTrigger[2] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[9][7][5] == 0) triggerHit("BranchTrigger[2] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[9][7][5] = 13;
         levels[9][7][4] = 16;
         levels[9][7][2] = 16;
@@ -837,7 +842,7 @@ function nextFrame(/*timeStamp*/) {
         levels[9][10][3] = 1;
         levels[9][10][5] = 1;
       } else {
-		if (levels[9][10][5] == 1) triggerHit("BranchTrigger[3] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[9][10][5] == 1) triggerHit("BranchTrigger[3] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[9][10][2] = 11;
         levels[9][10][3] = 11;
         levels[9][10][5] = 11;
@@ -847,21 +852,21 @@ function nextFrame(/*timeStamp*/) {
         levels[9][11][5] = 0;
         levels[9][13][5] = 0;
       } else {
-		if (levels[9][11][5] == 0) triggerHit("BranchTrigger[4] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[9][11][5] == 0) triggerHit("BranchTrigger[4] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[9][11][1] = 22;
         levels[9][11][5] = 23;
         levels[9][13][5] = 22;
       }
       if (player.triggers.includes(0)) {
-		if (levels[22][6][4] == -4) triggerHit("Trigger[0] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[22][6][4] == -4) triggerHit("Trigger[0] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[22][6][4] = 0;
       } else levels[22][6][4] = -4;
       if (player.triggers.includes(1)) {
-		if (levels[22][6][5] == -4) triggerHit("Trigger[1] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[22][6][5] == -4) triggerHit("Trigger[1] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[22][6][5] = 0;
       } else levels[22][6][5] = -4;
       if (player.triggers.includes(2)) {
-		if (levels[26][27][1] == -4) triggerHit("Trigger[2] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[26][27][1] == -4) triggerHit("Trigger[2] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[26][27][1] = 0;
         levels[26][27][2] = 0;
       } else {
@@ -869,7 +874,7 @@ function nextFrame(/*timeStamp*/) {
         levels[26][27][2] = -4;
       }
       if (player.triggers.includes(3)) {
-		if (levels[26][28][1] == -4) triggerHit("Trigger[3] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[26][28][1] == -4) triggerHit("Trigger[3] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[26][28][1] = 0;
         levels[26][28][2] = 0;
       } else {
@@ -877,7 +882,7 @@ function nextFrame(/*timeStamp*/) {
         levels[26][28][2] = -4;
       }
       if (player.triggers.includes(4)) {
-		if (levels[26][29][1] == -4) triggerHit("Trigger[4] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[26][29][1] == -4) triggerHit("Trigger[4] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[26][29][1] = 0;
         levels[26][29][2] = 0;
       } else {
@@ -885,7 +890,7 @@ function nextFrame(/*timeStamp*/) {
         levels[26][29][2] = -4;
       }
       if (player.triggers.includes(5)) {
-		if (levels[26][31][11] == -5) triggerHit("Trigger[5] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[26][31][11] == -5) triggerHit("Trigger[5] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[26][31][11] = 0;
         levels[26][31][12] = 0;
       } else {
@@ -893,7 +898,7 @@ function nextFrame(/*timeStamp*/) {
         levels[26][31][12] = -4;
       }
       if (player.triggers.includes(6)) {
-		if (levels[26][32][11] == -4) triggerHit("Trigger[6] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[26][32][11] == -4) triggerHit("Trigger[6] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[26][32][11] = 0;
         levels[26][32][12] = 0;
       } else {
@@ -901,7 +906,7 @@ function nextFrame(/*timeStamp*/) {
         levels[26][32][12] = -4;
       }
       if (player.triggers.includes(7)) {
-		if (levels[26][33][11] == -4) triggerHit("Trigger[7] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[26][33][11] == -4) triggerHit("Trigger[7] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[26][33][11] = 0;
         levels[26][33][12] = 0;
       } else {
@@ -909,35 +914,35 @@ function nextFrame(/*timeStamp*/) {
         levels[26][33][12] = -4;
       }
       if (player.triggers.includes(8)) {
-		if (levels[26][38][1] == -4) triggerHit("Trigger[8] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[26][38][1] == -4) triggerHit("Trigger[8] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[26][38][1] = 0;
       } else levels[26][38][1] = -4;
       if (player.triggers.includes(9)) {
-		if (levels[26][39][1] == -4) triggerHit("Trigger[9] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[26][39][1] == -4) triggerHit("Trigger[9] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[26][39][1] = 0;
       } else levels[26][39][1] = -4;
       if (player.triggers.includes(10)) {
-		if (levels[32][15][3] == -4) triggerHit("Trigger[10] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[32][15][3] == -4) triggerHit("Trigger[10] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[32][15][3] = 0;
       } else levels[32][15][3] = -4;
       if (player.triggers.includes(11)) {
-		if (levels[32][9][1] == -4) triggerHit("Trigger[11] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[32][9][1] == -4) triggerHit("Trigger[11] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[32][9][1] = 0;
       } else levels[32][9][1] = -4;
       if (player.triggers.includes(12)) {
-		if (levels[32][7][3] == -4) triggerHit("Trigger[12] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[32][7][3] == -4) triggerHit("Trigger[12] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[32][7][3] = 0;
       } else levels[32][7][3] = -4;
       if (player.triggers.includes(13)) {
-		if (levels[32][3][3] == -4) triggerHit("Trigger[13] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[32][3][3] == -4) triggerHit("Trigger[13] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[32][3][3] = 0;
       } else levels[32][3][3] = -4;
       if (player.triggers.includes(14)) {
-		if (levels[32][1][4] == -4) triggerHit("Trigger[14] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[32][1][4] == -4) triggerHit("Trigger[14] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[32][1][4] = 0;
       } else levels[32][1][4] = -4;
       if (player.triggers.includes(15)) {
-		if (levels[35][15][4] == -4) triggerHit("Trigger[15] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[35][15][4] == -4) triggerHit("Trigger[15] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[35][15][4] = 0;
         levels[35][15][5] = 0;
       } else {
@@ -945,23 +950,23 @@ function nextFrame(/*timeStamp*/) {
         levels[35][15][5] = -4;
       }
       if (player.triggers.includes(16)) {
-		if (levels[42][12][9] == -4) triggerHit("Trigger[16] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[42][12][9] == -4) triggerHit("Trigger[16] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[42][12][9] = 0;
       } else levels[42][12][9] = -4;
       if (player.triggers.includes(17)) {
-		if (levels[42][1][1] == -4) triggerHit("Trigger[17] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[42][1][1] == -4) triggerHit("Trigger[17] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[42][1][1] = 0;
       } else levels[42][1][1] = -4;
       if (player.triggers.includes(18)) {
-		if (levels[43][10][6] == -4) triggerHit("Trigger[18] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[43][10][6] == -4) triggerHit("Trigger[18] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[43][10][6] = 0;
       } else levels[43][10][6] = -4;
       if (player.triggers.includes(19)) {
-		if (levels[43][5][9] == -4) triggerHit("Trigger[19] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[43][5][9] == -4) triggerHit("Trigger[19] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[43][5][9] = 0;
       } else levels[43][5][9] = -4;
       if (player.triggers.includes(20)) {
-		if (levels[43][7][10] == -4) triggerHit("Trigger[20] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[43][7][10] == -4) triggerHit("Trigger[20] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[43][7][10] = 0;
         if (diff === "-HARD") levels[43][6][9] = -4;
       } else {
@@ -969,39 +974,39 @@ function nextFrame(/*timeStamp*/) {
         if (diff === "-HARD") levels[43][6][9] = 0;
       }
       if (player.triggers.includes(21)) {
-		if (levels[43][6][12] == -4) triggerHit("Trigger[21] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[43][6][12] == -4) triggerHit("Trigger[21] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[43][6][12] = 0;
       } else levels[43][6][12] = -4;
       if (player.triggers.includes(22)) {
-		if (levels[52][1][2] == -4) triggerHit("Trigger[22] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[52][1][2] == -4) triggerHit("Trigger[22] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[52][1][2] = 0;
       } else levels[52][1][2] = -4;
       if (player.triggers.includes(23)) {
-		if (levels[63][27][5] == -4) triggerHit("Trigger[23] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[63][27][5] == -4) triggerHit("Trigger[23] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[63][27][5] = 0;
       } else levels[63][27][5] = -4;
       if (player.triggers.includes(24)) {
-		if (levels[63][27][2] == -4) triggerHit("Trigger[24] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[63][27][2] == -4) triggerHit("Trigger[24] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[63][27][2] = 0;
       } else levels[63][27][2] = -4;
       if (player.triggers.includes(25)) {
-		if (levels[63][25][5] == -4) triggerHit("Trigger[25] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[63][25][5] == -4) triggerHit("Trigger[25] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[63][25][5] = 0;
       } else levels[63][25][5] = -4;
       if (player.triggers.includes(26)) {
-		if (levels[63][25][8] == -4) triggerHit("Trigger[26] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[63][25][8] == -4) triggerHit("Trigger[26] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[63][25][8] = 0;
       } else levels[63][25][8] = -4;
       if (player.triggers.includes(27)) {
-		if (levels[73][13][4] == -4) triggerHit("Trigger[27] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[73][13][4] == -4) triggerHit("Trigger[27] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[73][13][4] = 0;
       } else levels[73][13][4] = -4;
       if (player.triggers.includes(28)) {
-		if (levels[73][13][3] == -4) triggerHit("Trigger[28] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[73][13][3] == -4) triggerHit("Trigger[28] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[73][13][3] = 0;
       } else levels[73][13][3] = -4;
       if (player.triggers.includes(29)) {
-		if (levels[74][4][8] == -4) triggerHit("Trigger[29] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[74][4][8] == -4) triggerHit("Trigger[29] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[74][4][8] = 0;
         levels[74][4][9] = 0;
       } else {
@@ -1009,43 +1014,43 @@ function nextFrame(/*timeStamp*/) {
         levels[74][4][9] = -4;
       }
       if (player.triggers.includes(30)) {
-		if (levels[74][6][4] == -4) triggerHit("Trigger[30] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[74][6][4] == -4) triggerHit("Trigger[30] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[74][6][4] = 0;
       } else levels[74][6][4] = -4;
       if (player.triggers.includes(31)) {
-		if (levels[74][5][20] == -4) triggerHit("Trigger[31] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[74][5][20] == -4) triggerHit("Trigger[31] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[74][5][20] = 0;
       } else levels[74][5][20] = -4;
       if (player.triggers.includes(32)) {
-		if (levels[75][5][4] == -4) triggerHit("Trigger[32] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[75][5][4] == -4) triggerHit("Trigger[32] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[75][5][4] = 0;
       } else levels[75][5][4] = -4;
       if (player.triggers.includes(33)) {
-		if (levels[75][5][2] == -4) triggerHit("Trigger[33] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[75][5][2] == -4) triggerHit("Trigger[33] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[75][5][2] = 0;
       } else levels[75][5][2] = -4;
       if (player.triggers.includes(34)) {
-		if (levels[75][7][10] == -4) triggerHit("Trigger[34] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[75][7][10] == -4) triggerHit("Trigger[34] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[75][7][10] = 0;
       } else levels[75][7][10] = -4;
       if (player.triggers.includes(35)) {
-		if (levels[85][16][11] == -4) triggerHit("Trigger[35] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[85][16][11] == -4) triggerHit("Trigger[35] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[85][16][11] = 0;
       } else levels[85][16][11] = -4;
       if (player.triggers.includes(36)) {
-		if (levels[85][18][11] == -4) triggerHit("Trigger[36] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[85][18][11] == -4) triggerHit("Trigger[36] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[85][18][11] = 0;
       } else levels[85][18][11] = -4;
       if (player.triggers.includes(37)) {
-		if (levels[85][19][3] == -4) triggerHit("Trigger[37] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[85][19][3] == -4) triggerHit("Trigger[37] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[85][19][3] = 0;
       } else levels[85][19][3] = -4;
       if (player.triggers.includes(38)) {
-		if (levels[85][19][1] == -4) triggerHit("Trigger[38] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[85][19][1] == -4) triggerHit("Trigger[38] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[85][19][1] = 0;
       } else levels[85][19][1] = -4;
       if (player.triggers.includes(39)) {
-		if (levels[87][16][11] == -4) triggerHit("Trigger[39] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[87][16][11] == -4) triggerHit("Trigger[39] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[87][16][11] = 0;
         levels[87][16][12] = 0;
       } else {
@@ -1053,7 +1058,7 @@ function nextFrame(/*timeStamp*/) {
         levels[87][16][12] = -4;
       }
       if (player.triggers.includes(40)) {
-		if (levels[87][18][11] == -4) triggerHit("Trigger[40] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[87][18][11] == -4) triggerHit("Trigger[40] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[87][18][11] = 0;
         levels[87][18][12] = 0;
       } else {
@@ -1061,7 +1066,7 @@ function nextFrame(/*timeStamp*/) {
         levels[87][18][12] = -4;
       }
       if (player.triggers.includes(41)) {
-		if (levels[87][20][11] == -4) triggerHit("Trigger[41] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[87][20][11] == -4) triggerHit("Trigger[41] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[87][20][11] = 0;
         levels[87][20][12] = 0;
       } else {
@@ -1069,7 +1074,7 @@ function nextFrame(/*timeStamp*/) {
         levels[87][20][12] = -4;
       }
       if (player.triggers.includes(42)) {
-		if (levels[87][22][11] == -4) triggerHit("Trigger[42] @ "+currentFrame+" ("+(player.timePlayed/1000).toFixed(3)+")");
+		if (levels[87][22][11] == -4) triggerHit("Trigger[42] @ "+currentFrame+","+i+" ("+(player.timePlayed/1000+dt*i/1000).toFixed(3)+")");
         levels[87][22][11] = 0;
         levels[87][22][12] = 0;
       } else {
@@ -1257,13 +1262,13 @@ function isSpawn(x, y) {
     player.spawnPoint[1] == y
   );
 }
-function respawn(death = true) {
+function respawn(death = true, dt=0, i=0) {
   if (death) {
     player.deaths++;
     player.spawnPoint[11] = player.deaths;
     id("deathCount").innerHTML = player.deaths;
     save();
-	if (!fromRespawn) triggerHit("Death @ " + currentFrame + " (" + (player.timePlayed/1000).toFixed(3) + ")");
+	if (!fromRespawn) triggerHit("Death @ " + currentFrame + "," + i + " (" + (player.timePlayed/1000+dt*i/1000).toFixed(3) + ")");
 	else fromRespawn = false;
   }
   player.spawnTimer = player.spawnDelay;
