@@ -44,7 +44,7 @@ if (options.darkMode) {
       color: #ffbbff;
     }
   
-    #infoOpen, #mainInfo, .mobileBtn, #moreBtn, .mobileMoreBtn, #infoParent, #blockSelect, .time-box, #edit-tas-modal {
+    #infoOpen, #mainInfo, .mobileBtn, #moreBtn, .mobileMoreBtn, #infoParent, #blockSelect, .time-box, .modal-content {
       background-color: #00000088 !important;
     }
 
