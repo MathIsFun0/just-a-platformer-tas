@@ -1412,6 +1412,17 @@ function parseInput(f) {
 				levels[player.currentLevel][parseInt(TAS[0][2])][parseInt(TAS[0][3])] = [-3, "TAS"];
 				drawLevel();
 			}
+			//loadstates
+			else if (TAS[0][1] == "loadstate") {
+				if (TAS[0][2] == "game") player.spawnPoint = JSON.parse(TAS[0][3]);
+				else if (TAS[0][2] == "player") {
+					loadstate = JSON.parse(TAS[0][3]);
+					player.x = loadstate[0];
+					player.y = loadstate[1];
+					player.xv = loadstate[2];
+					player.yv = loadstate[3];
+				}
+			}
 		}
 		if (TAS[0].length == 3) {
 			// directional inputs
@@ -1434,6 +1445,10 @@ function parseInput(f) {
 					control.left = true;
 					control.right = false;
 				}
+			//savestates
+			} else if (TAS[0][1] == "savestate") {
+				if (TAS[0][2] == "game") navigator.clipboard.writeText(JSON.stringify(player.spawnPoint));
+				else if (TAS[0][2] == "player") navigator.clipboard.writeText(JSON.stringify([player.x,player.y,player.xv,player.yv]));
 			}
 		} else {
 			if (TAS[0][1] == "jump") {
@@ -1474,8 +1489,6 @@ function parseInput(f) {
 					fromRespawn = true;
 					respawn();
 				}
-			} else if (TAS[0][1] == "savestate") { //triggerHit() the checkpoint info
-				triggerHit(player.spawnPoint);
 			} else if (TAS[0][1] == "stop") {
 				gameRunning = false;
 			}
@@ -1491,6 +1504,15 @@ function parseInput(f) {
 		}
 		if (TAS[i].length == 3 && TAS[i][1] == "slowdown" && gameRunning == true) {
 			TAS_gameSlowdown = parseFloat(TAS[i][2]);
+			gameSpeedTextbox.value = (1/TAS_gameSlowdown).toFixed(2);
+			gameSpeedSlider.value = Math.log10(1/TAS_gameSlowdown).toFixed(2);
+			TAS.shift();
+			parseInput(f);
+		}
+		if (TAS[i].length == 3 && TAS[i][1] == "speed" && gameRunning == true) {
+			TAS_gameSlowdown = 1/parseFloat(TAS[i][2]);
+			gameSpeedTextbox.value = (1/TAS_gameSlowdown).toFixed(2);
+			gameSpeedSlider.value = Math.log10(1/TAS_gameSlowdown).toFixed(2);
 			TAS.shift();
 			parseInput(f);
 		}
@@ -1663,8 +1685,6 @@ tasBar.addEventListener('click', () => {
 
   menuOpen = !menuOpen;
 });
-
-// Existing JavaScript code
 
 const gameSpeedSlider = document.getElementById('game-speed-slider');
 const gameSpeedTextbox = document.getElementById('game-speed-textbox');
