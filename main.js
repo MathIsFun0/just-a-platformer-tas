@@ -1419,7 +1419,13 @@ function parseInput(f) {
 			}
 			//loadstates
 			else if (TAS[0][1] == "loadstate") {
-				if (TAS[0][2] == "game") player.spawnPoint = JSON.parse(TAS[0][3]);
+				if (TAS[0][2] == "game") {
+					player.spawnPoint = JSON.parse(TAS[0][3]);
+					player.isDead = true;
+					player.spawnTimer = 0;
+					fromRespawn = true;
+					player.deaths--; //account for respawning adding a death
+				}
 				else if (TAS[0][2] == "player") {
 					loadstate = JSON.parse(TAS[0][3]);
 					player.x = loadstate[0];
@@ -1603,6 +1609,10 @@ saveTasBtn = document.getElementById('save-tas-btn');
 // update the tas variable and hide the modal when the save button is clicked
 saveTasBtn.addEventListener('click', function() {
 	firstTime = false;
+	control.up = false;
+	control.left = false;
+	control.right = false;
+	player.canJump = false;
 	 modal.classList.remove("fade-in");
 	modal.classList.add("fade-out");
 	setTimeout(function() {
