@@ -1596,7 +1596,8 @@ var gameRunning = false;
 var firstTime = true;
 window.onload = function(){
 modal = document.getElementById('edit-tas-modal');
-
+modal.style.display = "block";
+	
 // get the <span> element that closes the modal
 closeBtn = document.getElementById('close');
 
