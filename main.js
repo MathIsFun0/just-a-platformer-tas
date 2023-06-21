@@ -1420,18 +1420,57 @@ function parseInput(f) {
 			//loadstates
 			else if (TAS[0][1] == "loadstate") {
 				if (TAS[0][2] == "game") {
-					player.spawnPoint = JSON.parse(TAS[0][3]);
-					player.isDead = true;
-					player.spawnTimer = 0;
-					fromRespawn = true;
-					player.deaths--; //account for respawning adding a death
-				}
+					//load data - from load()
+          let saveData = JSON.parse(TAS[0][3]);
+          if (saveData[5] == "Infinity") saveData[5] = Infinity;
+          if (saveData[8] == undefined) {
+            saveData[8] = newSave()[8];
+            saveData[3] += 3;
+          }
+          player.spawnPoint = saveData;
+          player.timePlayed = player.spawnPoint[10] ?? 0;
+          player.deaths = player.spawnPoint[11] ?? 0;
+          player.gameComplete = player.spawnPoint[12] ?? false;
+          player.finalTimePlayed = player.spawnPoint[13] ?? 0;
+          player.finalDeaths = player.spawnPoint[14] ?? 0;
+          player.branchTime = player.spawnPoint[15] ?? 0;
+          id("timePlayed").innerHTML = formatTime(player.timePlayed);
+          id("deathCount").innerHTML = player.deaths;
+          if (player.gameComplete) {
+            id("endStat").style.display = "inline";
+            id("timePlayedEnd").innerHTML = formatTime(player.finalTimePlayed);
+            id("deathCountEnd").innerHTML = player.finalDeaths;
+          }
+          save();
+          //load spawnpoint - from respawn()
+          player.levelCoord = [player.spawnPoint[2], player.spawnPoint[3]];
+          player.xv = 0;
+          player.yv = 0;
+          player.g = player.spawnPoint[4];
+          player.maxJumps = player.spawnPoint[5];
+          player.currentJumps = player.maxJumps;
+          player.moveSpeed = player.spawnPoint[6];
+          player.triggers = [...player.spawnPoint[7]];
+          player.reachedHub = player.spawnPoint[9];
+          let spawnx = player.spawnPoint[0] * blockSize + (blockSize - playerSize) / 2;
+          let spawny = player.spawnPoint[1] * blockSize;
+          if (player.g > 0) spawny += blockSize - playerSize;
+          player.x = spawnx;
+          player.y = spawny;
+          drawLevel();
+          drawPlayer();
+        }
 				else if (TAS[0][2] == "player") {
 					loadstate = JSON.parse(TAS[0][3]);
 					player.x = loadstate[0];
 					player.y = loadstate[1];
 					player.xv = loadstate[2];
 					player.yv = loadstate[3];
+          player.g = loadstate[4];
+          player.maxJumps = loadstate[5];
+          player.currentJumps = loadstate[6];
+          player.moveSpeed = loadstate[7];
+          player.triggers = [...loadstate[8]];
 				}
 			}
 		}
@@ -1459,7 +1498,7 @@ function parseInput(f) {
 			//savestates
 			} else if (TAS[0][1] == "savestate") {
 				if (TAS[0][2] == "game") navigator.clipboard.writeText(JSON.stringify(player.spawnPoint));
-				else if (TAS[0][2] == "player") navigator.clipboard.writeText(JSON.stringify([player.x,player.y,player.xv,player.yv]));
+				else if (TAS[0][2] == "player") navigator.clipboard.writeText(JSON.stringify([player.x,player.y,player.xv,player.yv,player.g,player.maxJumps,player.currentJumps,player.moveSpeed,player.triggers]));
 			}
 		} else {
 			if (TAS[0][1] == "jump") {
