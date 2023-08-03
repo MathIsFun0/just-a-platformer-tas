@@ -1480,6 +1480,7 @@ function parseInput(f) {
           player.currentJumps = loadstate[6];
           player.moveSpeed = loadstate[7];
           player.triggers = [...loadstate[8]];
+		  control.madeFirstInput = true;
 				}
 			}
 		}
@@ -1489,19 +1490,28 @@ function parseInput(f) {
 				if (TAS[0][1] == "rel") {
 					control.up = false;	
 					if (!control.down && !control.space) player.canJump = true;
-				} else if (TAS[0][1] == "press") control.up = true;
+				} else if (TAS[0][1] == "press") {
+					control.up = true;
+					control.madeFirstInput = true;
+				}
 			} else if (TAS[0][2] == "right") {
 				if (TAS[0][1] == "rel") control.right = false;
-				else if (TAS[0][1] == "press") control.right = true;
-				else if (TAS[0][1] == "move") {
+				else if (TAS[0][1] == "press") {
 					control.right = true;
+					control.madeFirstInput = true;
+				} else if (TAS[0][1] == "move") {
+					control.right = true;
+					control.madeFirstInput = true;
 					control.left = false;
 				}
 			} else if (TAS[0][2] == "left") {
 				if (TAS[0][1] == "rel") control.left = false;
-				else if (TAS[0][1] == "press") control.left = true;
-				else if (TAS[0][1] == "move") {
+				else if (TAS[0][1] == "press") {
 					control.left = true;
+					control.madeFirstInput = true;
+				} else if (TAS[0][1] == "move") {
+					control.left = true;
+					control.madeFirstInput = true;
 					control.right = false;
 				}
 			//savestates
@@ -1661,6 +1671,7 @@ saveTasBtn.addEventListener('click', function() {
 	control.up = false;
 	control.left = false;
 	control.right = false;
+	control.madeFirstInput = false;
 	player.canJump = false;
 	 modal.classList.remove("fade-in");
 	modal.classList.add("fade-out");
